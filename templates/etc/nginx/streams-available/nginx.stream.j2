@@ -1,0 +1,13 @@
+{%  if item.extras is defined %}
+{%    for extra in item.extras %}
+{{ extra }};
+{%    endfor %}
+
+{%  endif %}
+server {
+{%  if item.options is defined %}
+{%    for option in item.options %}
+    {{ option }};
+{%    endfor %}
+{%  endif %}
+}

@@ -1,0 +1,59 @@
+---
+#### nginx defaults
+
+
+nginx_user: www-data
+nginx_group: www-data
+
+nginx_version: 1.10.*
+nginx_packages:
+  - libssl1.0.0
+  - nginx-common={{ nginx_version }}
+  - nginx-extras={{ nginx_version }}
+
+nginx_config_dir: /etc/nginx
+nginx_log_dir: /var/log/nginx
+nginx_htpasswd_dir: '{{ nginx_config_dir }}/htpasswd'
+nginx_sites_available: '{{ nginx_config_dir }}/sites-available'
+nginx_sites_enabled: '{{ nginx_config_dir }}/sites-enabled'
+nginx_streams_available: '{{ nginx_config_dir }}/streams-available'
+nginx_streams_enabled: '{{ nginx_config_dir }}/streams-enabled'
+
+nginx_workers: auto
+nginx_worker_rlimit_nofile: 4096
+nginx_pid: /run/nginx.pid
+nginx_worker_connections: 1024
+
+nginx_sendfile: 'on'
+nginx_tcp_nopush: 'on'
+nginx_tcp_nodelay: 'on'
+nginx_keepalive_timeout: 65
+nginx_types_hash_max_size: 2048
+nginx_server_tokens: 'off'
+
+nginx_default_type: application/octet-stream
+
+nginx_ssl_protocols: TLSv1 TLSv1.1 TLSv1.2
+nginx_ssl_ciphers: ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA:DHE-RSA-AES256-SHA
+nginx_ssl_prefer_server_ciphers: 'on'
+nginx_ssl_ecdh_curve: secp384r1:prime256v1
+nginx_ssl_dhparam: '{{ nginx_config_dir }}/ffdhe4096.pem'
+nginx_ssl_session_cache: shared:TLS:10m # 1m ~ 4000 connections
+nginx_ssl_buffer_size: 16k
+nginx_ssl_hsts: True
+nginx_ssl_hsts_max_age: 31536000
+nginx_ssl_hsts_include_subdomains: True
+nginx_ssl_hsts_preload: True
+nginx_ssl_hsts_always: True
+
+nginx_http_access_log: '{{ nginx_log_dir }}/access.log'
+nginx_http_error_log: '{{ nginx_log_dir }}/error.log'
+
+nginx_gzip: 'on'
+nginx_gzip_disable: msie6
+
+nginx_auth: {}
+nginx_sites: {}
+nginx_sites_upstreams: {}
+nginx_streams: {}
+nginx_streams_upstreams: {}

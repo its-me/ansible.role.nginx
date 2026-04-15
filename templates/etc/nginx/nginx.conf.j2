@@ -1,0 +1,97 @@
+user {{ nginx_user }};
+worker_processes {{ nginx_workers | lower }};
+worker_rlimit_nofile {{ nginx_worker_rlimit_nofile }};
+pid {{ nginx_pid }};
+
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+        worker_connections {{ nginx_worker_connections }};
+{%    if nginx_multi_accept is defined %}
+        multi_accept {{ nginx_multi_accept }};
+{%    endif %}
+}
+
+http {
+
+        ##
+        # Basic Settings
+        ##
+
+        sendfile {{ nginx_sendfile }};
+        tcp_nopush {{ nginx_tcp_nopush }};
+        tcp_nodelay {{ nginx_tcp_nodelay }};
+        keepalive_timeout {{ nginx_keepalive_timeout }};
+        types_hash_max_size {{ nginx_types_hash_max_size }};
+        server_tokens {{ nginx_server_tokens }};
+
+{%    if nginx_server_names_hash_bucket_size is defined %}
+        server_names_hash_bucket_size {{ nginx_server_names_hash_bucket_size }};
+{%    endif %}
+{%    if nginx_server_name_in_redirect is defined %}
+        server_name_in_redirect {{ nginx_server_name_in_redirect }};
+{%    endif %}
+
+        include /etc/nginx/mime.types;
+        default_type {{ nginx_default_type }};
+
+        ##
+        # SSL Settings
+        ##
+
+        ssl_protocols {{ nginx_ssl_protocols }};
+        ssl_ciphers {{ nginx_ssl_ciphers }};
+        ssl_prefer_server_ciphers {{ nginx_ssl_prefer_server_ciphers }};
+        ssl_ecdh_curve {{ nginx_ssl_ecdh_curve }};
+        ssl_dhparam {{ nginx_ssl_dhparam }};
+        ssl_session_cache {{ nginx_ssl_session_cache }}; # 1m ~ 4000 connections
+        ssl_buffer_size {{ nginx_ssl_buffer_size }};
+{%    if nginx_ssl_hsts %}
+        add_header Strict-Transport-Security 'max-age={{ nginx_ssl_hsts_max_age }}{% if nginx_ssl_hsts_include_subdomains %}; includeSubDomains{% endif %}{% if nginx_ssl_hsts_preload %}; preload{% endif %}'{% if nginx_ssl_hsts_always %} always{% endif %};
+{%    endif %}
+
+        ##
+        # Logging Settings
+        ##
+
+        access_log {{ nginx_http_access_log }};
+        error_log {{ nginx_http_error_log }};
+
+        ##
+        # Gzip Settings
+        ##
+
+        gzip {{ nginx_gzip }};
+        gzip_disable "{{ nginx_gzip_disable }}";
+{%    if nginx_gzip_vary is defined %}
+        gzip_vary {{ nginx_gzip_vary }};
+{%    endif %}
+{%    if nginx_gzip_proxied is defined %}
+        gzip_proxied {{ nginx_gzip_proxied }};
+{%    endif %}
+{%    if nginx_gzip_comp_level is defined %}
+        gzip_comp_level {{ nginx_gzip_comp_level }};
+{%    endif %}
+{%    if nginx_gzip_buffers is defined %}
+        gzip_buffers {{ nginx_gzip_buffers }};
+{%    endif %}
+{%    if nginx_gzip_http_version is defined %}
+        gzip_http_version {{ nginx_gzip_http_version }};
+{%    endif %}
+{%    if nginx_gzip_types is defined %}
+        gzip_types {{ nginx_gzip_types }};
+{%    endif %}
+
+        ##
+        # Virtual Host Configs
+        ##
+
+        include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+}
+{% if nginx_streams is defined %}
+
+stream {
+        include /etc/nginx/streams-enabled/*;
+}
+{% endif %}

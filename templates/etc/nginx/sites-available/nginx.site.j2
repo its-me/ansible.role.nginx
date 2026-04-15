@@ -1,0 +1,34 @@
+{%  if item.extras is defined %}
+{%    for extra in item.extras %}
+{{ extra }};
+{%    endfor %}
+
+{%  endif %}
+server {
+{%  if item.options is defined %}
+{%    for option in item.options %}
+    {{ option }};
+{%    endfor %}
+{%  endif %}
+
+{%  if item.locations is defined %}
+{%    for location in item.locations %}
+    location {{ location.name }} {
+{%      if location.ifs is defined %}
+{%        for if in location.ifs %}
+      if ({{ if.name }}) {
+{%          for option in if.options %}
+        {{ option }};
+{%          endfor %}
+      }
+
+{%        endfor %}
+{%      endif %}
+{%      for option in location.options %}
+      {{ option }};
+{%      endfor %}
+    }
+
+{%    endfor %}
+{%  endif %}
+}

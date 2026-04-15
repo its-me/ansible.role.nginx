@@ -1,0 +1,26 @@
+---
+
+
+dependencies:
+  - role: apt
+    apt_packages: '{{ nginx_packages }}'
+    when: ansible_distribution_release != 'jessie'
+    tags: apt
+
+  - role: apt
+    apt_packages: '{{ nginx_packages }}'
+    apt_repo: backports
+    when: ansible_distribution_release == 'jessie'
+    tags: apt
+
+  - role: apt
+    apt_packages: python-passlib
+    when: nginx_auth is defined
+    tags: apt
+
+  - role: certs
+    certs_user: '{{ nginx_user }}'
+    certs_cert: '{{ nginx_ssl_cert }}'
+    certs_private: '{{ nginx_ssl_pkey }}'
+    when: nginx_ssl_cert is defined or nginx_ssl_pkey is defined
+    tags: certs

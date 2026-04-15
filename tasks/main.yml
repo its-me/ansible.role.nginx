@@ -1,0 +1,180 @@
+---
+#### nginx role
+
+
+# main configuration
+- block:
+  - name: add main config /etc/nginx/nginx.conf
+    template:
+      src: etc/nginx/nginx.conf.j2
+      dest: '{{ nginx_config_dir }}/nginx.conf'
+    notify: check and restart nginx
+
+  - name: add config addons to {{ nginx_config_dir }}/conf.d
+    copy:
+      src: '{{ item }}'
+      dest: '{{ nginx_config_dir }}/conf.d'
+    with_fileglob: etc/nginx/conf.d/*
+    notify: check and reload nginx
+
+  - name: add pre-defined DHE group
+    copy:
+      src: etc/nginx/ffdhe4096.pem
+      dest: '{{ nginx_ssl_dhparam }}'
+    notify: check and reload nginx
+
+  - name: disable default nginx site
+    file:
+      path: '{{ nginx_sites_enabled }}/default'
+      state: absent
+    notify: check and reload nginx
+
+  become: yes
+  tags: ['prepare']
+
+
+# auth configuration
+- block:
+  - name: create dir {{ nginx_htpasswd_dir }}
+    file:
+      path: '{{ nginx_htpasswd_dir }}'
+      mode: 0755
+      state: directory
+
+  - name: add htpasswd file to site
+    htpasswd:
+      path: '{{ nginx_htpasswd_dir }}/{{ item.0.file }}'
+      name: '{{ item.1.user }}'
+      password: '{{ item.1.pass }}'
+      owner: root
+      group: '{{ nginx_group }}'
+      mode: 0640
+    with_subelements:
+      - '{{ nginx_auth }}'
+      - credentials
+
+  become: yes
+  when: nginx_auth is defined
+  tags: ['auth']
+
+# sites
+- block:
+  # sites upstreams configuration
+  - block:
+    - name: add site upstream configuration
+      template:
+        src: etc/nginx/sites-available/nginx.upstream.j2
+        dest: '{{ nginx_sites_available }}/{{ item.name }}.upstream'
+      notify: check and reload nginx
+      with_items: '{{ nginx_sites_upstreams }}'
+      tags: ['upstreams']
+
+    - name: create nginx upstream link
+      file:
+        src: '{{ nginx_sites_available }}/{{ item.name }}.upstream'
+        dest: '{{ nginx_sites_enabled }}/{{ item.name }}.upstream'
+        state: link
+      notify: check and reload nginx
+      with_items: '{{ nginx_sites_upstreams }}'
+      tags: ['upstreams', 'enable']
+
+    when: nginx_sites_upstreams is defined
+
+
+  # sites configuration
+  - block:
+    - name: add site configuration
+      template:
+        src: etc/nginx/sites-available/nginx.site.j2
+        dest: '{{ nginx_sites_available }}/{{ item.name }}.site'
+      notify: check and reload nginx
+      with_items: '{{ nginx_sites }}'
+
+    - name: create nginx site link
+      file:
+        src: '{{ nginx_sites_available }}/{{ item.name }}.site'
+        dest: '{{ nginx_sites_enabled }}/{{ item.name }}.site'
+        state: link
+      notify: check and reload nginx
+      with_items: '{{ nginx_sites }}'
+      tags: ['enable']
+
+    when: nginx_sites is defined
+
+  become: yes
+  tags: ['sites']
+
+
+# streams
+- block:
+  # streams folders configuration
+  - block:
+    - name: add streams forders
+      file:
+        dest: '{{ item }}'
+        mode: 0755
+        state: directory
+      with_items:
+        - streams-available
+        - streams-enabled
+
+    when: nginx_streams_upstreams is defined or nginx_streams is defined
+
+
+  # streams upstreams configuration
+  - block:
+    - name: add stream upstream configuration
+      template:
+        src: etc/nginx/streams-available/nginx.upstream.j2
+        dest: '{{ nginx_streams_available }}/{{ item.name }}.upstream'
+      notify: check and reload nginx
+      with_items: '{{ nginx_streams_upstreams }}'
+      tags: ['upstreams']
+
+    - name: create nginx stream upstream link
+      file:
+        src: '{{ nginx_streams_available }}/{{ item.name }}.upstream'
+        dest: '{{ nginx_streams_enabled }}/{{ item.name }}.upstream'
+        state: link
+      notify: check and reload nginx
+      with_items: '{{ nginx_streams_upstreams }}'
+      tags: ['upstreams', 'enable']
+
+    when: nginx_streams_upstreams is defined
+
+
+  # streams configuration
+  - block:
+    - name: add stream configuration
+      template:
+        src: etc/nginx/streams-available/nginx.stream.j2
+        dest: '{{ nginx_streams_available }}/{{ item.name }}.stream'
+      notify: check and reload nginx
+      with_items: '{{ nginx_streams }}'
+
+    - name: create nginx stream link
+      file:
+        src: '{{ nginx_streams_available }}/{{ item.name }}.stream'
+        dest: '{{ nginx_streams_enabled }}/{{ item.name }}.stream'
+        state: link
+      notify: check and reload nginx
+      with_items: '{{ nginx_streams }}'
+      tags: ['enable']
+
+    when: nginx_streams is defined
+
+  become: yes
+  tags: ['streams']
+
+
+# shorewall
+- block:
+  - name: configure shorewall
+    include_role:
+      name: shorewall
+    vars:
+      shorewall_fact: 'nginx'
+      shorewall_rules: '{{ nginx_shorewall }}'
+
+  when: nginx_shorewall is defined
+  tags: ['shorewall']

@@ -1,0 +1,24 @@
+---
+
+
+- name: check and restart nginx
+  become: yes
+  command: '/usr/sbin/nginx -t'
+  notify: restart nginx
+
+- name: check and reload nginx
+  become: yes
+  command: '/usr/sbin/nginx -t'
+  notify: reload nginx
+
+- name: restart nginx
+  become: yes
+  service:
+    name: nginx
+    state: restarted
+
+- name: reload nginx
+  become: yes
+  service:
+    name: nginx
+    state: reloaded

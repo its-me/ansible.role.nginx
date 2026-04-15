@@ -1,0 +1,14 @@
+upstream {{ item.name }} {
+{%  if item.servers is defined %}
+{%    for server in item.servers %}
+    server {{ server }};
+{%    endfor %}
+{%  endif%}
+{%  if item.groups is defined %}
+{%    for group in item.groups %}
+{%      for server in groups[group] %}
+    server {{ server }}{% if item.ports is defined %}:{{ item.ports }}{% endif %}{% if item.options is defined %} {{ item.options }}{% endif %};
+{%      endfor %}
+{%    endfor %}
+{%  endif %}
+}
